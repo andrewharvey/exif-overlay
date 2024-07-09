@@ -4,6 +4,9 @@
 # Usage: exif-overlay <input_directory> <output_directory>
 
 set -eou pipefail
+
+shopt -s nullglob
+
 trap "exit" INT
 
 INPUT_DIR=$1
@@ -18,8 +21,9 @@ fi
 
 declare -A EXIF
 
+
 # exiftool -json can be used to obtain the field names available
-CSV=`exiftool -csv -ShutterSpeed -FocalLength35efl -Megapixels -FNumber -ISO "$INPUT_DIR"/*.JPG | tail -n+2`
+CSV=`exiftool -csv -ShutterSpeed -FocalLength35efl -Megapixels -FNumber -ISO "$INPUT_DIR"/*.{jpg,JPG,heic,HEIC} | tail -n+2`
 TOTAL_LINES=`wc -l <<< "$CSV"`
 
 IFS=$'\n'

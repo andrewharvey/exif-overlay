@@ -1,0 +1,43 @@
+#!/bin/bash
+
+# Annotate a directory of images with selected EXIF data
+# Usage: exif-overlay <input_directory> <output_directory>
+
+trap "exit" INT
+
+INPUT_DIR=$1
+OUTPUT_DIR=$2
+
+if [ -d "$1" -a -n ] ; then
+    mkdir -p "$OUTPUT_DIR"
+else
+    echo "Usage: $0 <input_directory> <output_directory>"
+    exit
+fi
+
+declare -A EXIF
+
+# exiftool -json can be used to obtain the field names available
+CSV=`exiftool -csv -ShutterSpeed -FocalLength35efl -Megapixels -FNumber -ISO "$INPUT_DIR"/*.JPG | tail -n+2`
+TOTAL_LINES=`wc -l <<< "$CSV"`
+
+IFS=$'\n'
+
+INDEX=0
+for CSV_LINE in $CSV; do
+    INDEX=$(($INDEX + 1))
+    echo -ne "$INDEX/$TOTAL_LINES\r"
+
+    FILE=`echo $CSV_LINE | cut -d',' -f1`
+    FILENAME=`basename $FILE`
+    SHUTTER_SPEED=`echo $CSV_LINE | cut -d',' -f2`
+    FOCAL_LENGTH=`echo $CSV_LINE | cut -d',' -f3`
+    FOCAL_LENGTH_35=`echo $FOCAL_LENGTH | cut -d':' -f2 | sed 's/\s*//g' | sed 's/)\s*//g'`
+    MEGAPIXELS=`echo $CSV_LINE | cut -d',' -f4`
+    FNUMBER=`echo $CSV_LINE | cut -d',' -f5`
+    ISO=`echo $CSV_LINE | cut -d',' -f6`
+
+    #echo $FILENAME $SHUTTER_SPEED $FOCAL_LENGTH_35 $MEGAPIXELS $FNUMBER $ISO
+
+    convert "$INPUT_DIR/$FILENAME" -auto-orient -fill white -undercolor '#00000080' -gravity NorthWest -pointsize 100 -annotate 0 "$FOCAL_LENGTH_35 $SHUTTER_SPEED f/$FNUMBER ISO $ISO ${MEGAPIXELS}MP" "$OUTPUT_DIR/$FILENAME"
+done

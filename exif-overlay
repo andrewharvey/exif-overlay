@@ -3,6 +3,7 @@
 # Annotate a directory of images with selected EXIF data
 # Usage: exif-overlay <input_directory> <output_directory>
 
+set -eou pipefail
 trap "exit" INT
 
 INPUT_DIR=$1
